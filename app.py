@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
 
 # MongoDB connection
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb+srv://sapramsumasri:W5M2BrPHQFCzE3qy@fueldelivery.sp610.mongodb.net/?retryWrites=true&w=majority&appName=FuelDelivery')
 db = client['fuel_delivery']
 users = db['users']
 owners = db['owners']
@@ -701,4 +701,4 @@ def confirm_payment(order_id):
         return redirect(url_for('order_tracking', order_id=order_id))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,host='0.0.0.0',port=5000)

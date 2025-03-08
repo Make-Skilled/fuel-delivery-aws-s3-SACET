@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Station Dashboard - Fuel Delivery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Station Dashboard</h1>
+            <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full">Active</span>
+        </div>
+
+        <!-- Station Info -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Station Information</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-600">Station Name</p>
+                    <p class="font-semibold">{{ station.name }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-600">Location</p>
+                    <p class="font-semibold">{{ station.city }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-600">Contact</p>
+                    <p class="font-semibold">{{ station.phone }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-gray-600">Address</p>
+                    <p class="font-semibold">{{ station.address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fuel Management -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Fuel Management</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Petrol Section -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Petrol</h3>
+                    <form action="{{ url_for('update_petrol') }}" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="petrol_quantity">Available Quantity (Liters)</label>
+                            <input type="number" id="petrol_quantity" name="quantity" value="{{ station.petrol_quantity }}"
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="petrol_price">Price per Liter (₹)</label>
+                            <input type="number" step="0.01" id="petrol_price" name="price" value="{{ station.petrol_price }}"
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                            Update Petrol Details
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Diesel Section -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Diesel</h3>
+                    <form action="{{ url_for('update_diesel') }}" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="diesel_quantity">Available Quantity (Liters)</label>
+                            <input type="number" id="diesel_quantity" name="quantity" value="{{ station.diesel_quantity }}"
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="diesel_price">Price per Liter (₹)</label>
+                            <input type="number" step="0.01" id="diesel_price" name="price" value="{{ station.diesel_price }}"
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                            Update Diesel Details
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4">Recent Orders</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuel Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a href="{{ url_for('order_tracking', order_id=order._id) }}" class="text-blue-600 hover:underline">
+                                    #{{ order._id }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <p class="font-semibold">User ID: {{ order.user_id }}</p>
+                                    <p class="text-sm text-gray-600">{{ order.created_at.strftime('%B %d, %Y') }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-sm rounded-full 
+                                    {% if order.fuel_type == 'petrol' %}bg-green-100 text-green-800
+                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ order.fuel_type|title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ order.quantity }} L</td>
+                            <td class="px-6 py-4 whitespace-nowrap">₹{{ order.total_amount }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-800
+                                    {% elif order.status == 'out_for_delivery' %}bg-purple-100 text-purple-800
+                                    {% elif order.status == 'delivered' %}bg-green-100 text-green-800
+                                    {% elif order.status == 'cancelled' %}bg-red-100 text-red-800{% endif %}">
+                                    {{ order.status|title }}
+                                </span>
+                                {% if order.payment_confirmed %}
+                                <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Payment Verified
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex space-x-2">
+                                    {% if order.status == 'pending' %}
+                                    <form action="{{ url_for('confirm_order', order_id=order._id) }}" method="POST" class="inline">
+                                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                            Confirm
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST" class="inline">
+                                        <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                    {% elif order.status == 'confirmed' %}
+                                    <form action="{{ url_for('mark_out_for_delivery', order_id=order._id) }}" method="POST" class="inline">
+                                        <button type="submit" class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
+                                            Out for Delivery
+                                        </button>
+                                    </form>
+                                    {% elif order.status == 'out_for_delivery' %}
+                                    <form action="{{ url_for('mark_delivered', order_id=order._id) }}" method="POST" class="inline">
+                                        <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                            Mark Delivered
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <a href="{{ url_for('order_tracking', order_id=order._id) }}" 
+                                       class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">
+                                        View Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

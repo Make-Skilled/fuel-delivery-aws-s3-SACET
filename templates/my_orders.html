@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - Fuel Delivery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">My Orders</h1>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-user-circle text-gray-500"></i>
+                <span class="text-gray-700">{{ user.name }}</span>
+            </div>
+        </div>
+
+        {% if orders %}
+        <div class="space-y-6">
+            {% for order in orders %}
+            <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold">
+                            <a href="{{ url_for('order_tracking', order_id=order._id) }}" class="text-blue-600 hover:underline">
+                                Order #{{ order._id }}
+                            </a>
+                        </h3>
+                        <p class="text-gray-600">{{ order.created_at.strftime('%B %d, %Y %I:%M %p') }}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold
+                            {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-800
+                            {% elif order.status == 'out_for_delivery' %}bg-purple-100 text-purple-800
+                            {% elif order.status == 'delivered' %}bg-green-100 text-green-800
+                            {% elif order.status == 'cancelled' %}bg-red-100 text-red-800{% endif %}">
+                            {{ order.status|title }}
+                        </span>
+                        {% if order.payment_confirmed %}
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                            Payment Verified
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <p class="text-gray-600">Station</p>
+                        <p class="font-semibold">{{ order.station_name }}</p>
+                        <p class="text-sm text-gray-600">{{ order.station_address }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Fuel Details</p>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-sm rounded-full 
+                                {% if order.fuel_type == 'petrol' %}bg-green-100 text-green-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ order.fuel_type|title }}
+                            </span>
+                            <span class="font-semibold">{{ order.quantity }} L</span>
+                        </div>
+                        <p class="text-sm text-gray-600">₹{{ order.price_per_liter }}/L</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">Total Amount</p>
+                        <p class="text-lg font-semibold">₹{{ order.total_amount }}</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    {% if order.status == 'pending' %}
+                    <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST" class="inline">
+                        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Cancel Order
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if order.status == 'delivered' and not order.payment_confirmed %}
+                    <a href="{{ url_for('order_tracking', order_id=order._id) }}" 
+                       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        Confirm Payment
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('order_tracking', order_id=order._id) }}" 
+                       class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <p class="text-gray-600">You haven't placed any orders yet.</p>
+            <a href="{{ url_for('user_dashboard') }}" class="text-blue-600 hover:underline">
+                Search for gas stations
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

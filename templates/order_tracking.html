@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Order Tracking - Fuel Delivery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <!-- Order Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Order #{{ order._id }}</h1>
+                    <p class="text-gray-600">Placed on {{ order.created_at.strftime('%B %d, %Y %I:%M %p') }}</p>
+                </div>
+                <div class="flex space-x-2">
+                    <span class="px-4 py-2 rounded-full 
+                        {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                        {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-800
+                        {% elif order.status == 'out_for_delivery' %}bg-purple-100 text-purple-800
+                        {% elif order.status == 'delivered' %}bg-green-100 text-green-800
+                        {% elif order.status == 'cancelled' %}bg-red-100 text-red-800{% endif %}">
+                        {{ order.status|title }}
+                    </span>
+                    {% if order.payment_confirmed %}
+                    <span class="px-4 py-2 rounded-full bg-green-100 text-green-800">
+                        Payment Verified
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Order Details</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-gray-600 mb-1">Fuel Type</p>
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold
+                            {% if order.fuel_type == 'petrol' %}bg-green-100 text-green-800
+                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ order.fuel_type|title }}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Quantity</p>
+                        <p class="font-semibold">{{ order.quantity }} L</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Price per Liter</p>
+                        <p class="font-semibold">₹{{ order.price_per_liter }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Total Amount</p>
+                        <p class="font-semibold text-lg">₹{{ order.total_amount }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Station Details</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-gray-600 mb-1">Station Name</p>
+                        <p class="font-semibold">{{ order.station.name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Address</p>
+                        <p class="font-semibold">{{ order.station.address }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 mb-1">Contact</p>
+                        <p class="font-semibold">{{ order.station.phone }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Timeline -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Order Timeline</h2>
+            <div class="space-y-4">
+                {% for status in order.status_history %}
+                <div class="flex items-start">
+                    <div class="flex items-center h-full">
+                        <div class="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div class="w-0.5 h-full bg-blue-200"></div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="font-semibold">{{ status.status|title }}</p>
+                        <p class="text-sm text-gray-600">{{ status.timestamp.strftime('%B %d, %Y %I:%M %p') }}</p>
+                        {% if status.note %}
+                        <p class="text-gray-700 mt-1">{{ status.note }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        {% if session.get('user_type') == 'owner' %}
+            {% if order.status == 'pending' %}
+            <div class="flex space-x-4">
+                <form action="{{ url_for('confirm_order', order_id=order._id) }}" method="POST" class="flex-1">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                        Confirm Order
+                    </button>
+                </form>
+                <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST" class="flex-1">
+                    <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                        Cancel Order
+                    </button>
+                </form>
+            </div>
+            {% elif order.status == 'confirmed' %}
+            <form action="{{ url_for('mark_out_for_delivery', order_id=order._id) }}" method="POST">
+                <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700">
+                    Mark as Out for Delivery
+                </button>
+            </form>
+            {% elif order.status == 'out_for_delivery' %}
+            <form action="{{ url_for('mark_delivered', order_id=order._id) }}" method="POST">
+                <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">
+                    Mark as Delivered
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+
+        {% if session.get('user_type') == 'user' %}
+            {% if order.status == 'delivered' and not order.payment_confirmed %}
+            <div class="border-t pt-8">
+                <h2 class="text-xl font-semibold mb-4">Confirm Payment</h2>
+                <form action="{{ url_for('confirm_payment', order_id=order._id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="payment_receipt">Upload Payment Receipt</label>
+                        <input type="file" id="payment_receipt" name="payment_receipt" accept="image/*" required
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <p class="text-sm text-gray-600 mt-1">Please upload a clear image of your payment receipt (PNG, JPG, or JPEG)</p>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="payment_note">Additional Notes (Optional)</label>
+                        <textarea id="payment_note" name="payment_note" rows="3"
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                            placeholder="Add any additional notes about the payment..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">
+                        Confirm Payment & Upload Receipt
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if order.status == 'pending' %}
+            <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST">
+                <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                    Cancel Order
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+
+        {% if order.payment_confirmed %}
+        <div class="border-t pt-8">
+            <h2 class="text-xl font-semibold mb-4">Payment Receipt</h2>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <img src="{{ order.payment_receipt }}" 
+                     alt="Payment Receipt" 
+                     class="max-w-full h-auto rounded-lg shadow-md">
+                {% if order.payment_note %}
+                <div class="mt-4 p-4 bg-white rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-700 mb-2">Payment Note:</h3>
+                    <p class="text-gray-600">{{ order.payment_note }}</p>
+                </div>
+                {% endif %}
+                <div class="mt-4 text-sm text-gray-500">
+                    Payment confirmed on {{ order.payment_confirmed_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

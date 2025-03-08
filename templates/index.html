@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Fuel Delivery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto text-center">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <h1 class="text-4xl font-bold mb-4">Welcome to Fuel Delivery</h1>
+        <p class="text-gray-600 mb-8">Order fuel from nearby gas stations with ease</p>
+        
+        <div class="space-y-4">
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="text-2xl font-semibold mb-4">For Customers</h2>
+                <p class="text-gray-600 mb-4">Find and order fuel from gas stations in your city</p>
+                <div class="space-x-4">
+                    <a href="{{ url_for('register') }}" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700">Register</a>
+                    <a href="{{ url_for('login') }}" class="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700">Login</a>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="text-2xl font-semibold mb-4">For Gas Station Owners</h2>
+                <p class="text-gray-600 mb-4">Register your station and manage fuel inventory</p>
+                <div class="space-x-4">
+                    <a href="{{ url_for('register') }}" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700">Register Station</a>
+                    <a href="{{ url_for('login') }}" class="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700">Owner Login</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold mb-6">How It Works</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="text-3xl text-blue-600 mb-4">1</div>
+                    <h3 class="text-xl font-semibold mb-2">Search</h3>
+                    <p class="text-gray-600">Find gas stations in your city and compare fuel prices</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="text-3xl text-blue-600 mb-4">2</div>
+                    <h3 class="text-xl font-semibold mb-2">Order</h3>
+                    <p class="text-gray-600">Place your order with your preferred quantity</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="text-3xl text-blue-600 mb-4">3</div>
+                    <h3 class="text-xl font-semibold mb-2">Delivery</h3>
+                    <p class="text-gray-600">Get fuel delivered to your location</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

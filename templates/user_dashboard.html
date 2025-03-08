@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard - Fuel Delivery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Find Gas Stations</h1>
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-user-circle text-gray-500"></i>
+                <span class="text-gray-700">{{ user.name if user else 'Guest' }}</span>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="mb-8">
+            <form action="{{ url_for('search_stations') }}" method="GET" class="flex gap-4" id="searchForm">
+                <div class="flex-1">
+                    <label class="block text-gray-700 mb-2" for="city">Select City</label>
+                    <select id="city" name="city" required
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">Select a city</option>
+                        {% for city in cities %}
+                        <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-gray-700 mb-2" for="fuel_type">Fuel Type</label>
+                    <select id="search_fuel_type" name="fuel_type" required onchange="updateSelectedFuelType(this.value)"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="petrol" {% if fuel_type == 'petrol' %}selected{% endif %}>Petrol</option>
+                        <option value="diesel" {% if fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700">
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Gas Stations List -->
+        {% if stations %}
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Available Gas Stations</h2>
+            <div class="grid grid-cols-1 gap-4">
+                {% for station in stations %}
+                <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold">{{ station.name }}</h3>
+                            <p class="text-gray-600">{{ station.address }}</p>
+                            <p class="text-gray-600">{{ station.city }}</p>
+                            <div class="mt-2">
+                                <p class="text-sm font-medium">
+                                    <span class="text-blue-600">Petrol:</span> ₹{{ station.petrol_price }}/L ({{ station.petrol_quantity }}L available)
+                                </p>
+                                <p class="text-sm font-medium">
+                                    <span class="text-green-600">Diesel:</span> ₹{{ station.diesel_price }}/L ({{ station.diesel_quantity }}L available)
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-semibold text-green-600">₹{{ station.petrol_price if fuel_type == 'petrol' else station.diesel_price }}/L</p>
+                            <p class="text-sm text-gray-600">Selected: {{ fuel_type|title }}</p>
+                            <p class="text-sm text-gray-600">Available: {{ station.petrol_quantity if fuel_type == 'petrol' else station.diesel_quantity }}L</p>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" 
+                                data-station-id="{{ station._id }}"
+                                data-fuel-type="{{ fuel_type }}"
+                                data-station-name="{{ station.name }}"
+                                data-petrol-price="{{ station.petrol_price }}"
+                                data-diesel-price="{{ station.diesel_price }}"
+                                data-petrol-quantity="{{ station.petrol_quantity }}"
+                                data-diesel-quantity="{{ station.diesel_quantity }}"
+                                onclick="handlePlaceOrder(this)"
+                                class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                            Place Order
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif selected_city %}
+        <div class="text-center py-8">
+            <p class="text-gray-600">No gas stations found in {{ selected_city }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Recent Orders -->
+        {% if recent_orders %}
+        <div>
+            <h2 class="text-xl font-semibold mb-4">Your Recent Orders</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Station</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fuel Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a href="{{ url_for('order_tracking', order_id=order._id) }}" class="text-blue-600 hover:underline">
+                                    #{{ order._id }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <p class="font-semibold">{{ order.station_name }}</p>
+                                    <p class="text-sm text-gray-600">{{ order.station_address }}</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-sm rounded-full 
+                                    {% if order.fuel_type == 'petrol' %}bg-green-100 text-green-800
+                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ order.fuel_type|title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ order.quantity }} L</td>
+                            <td class="px-6 py-4 whitespace-nowrap">₹{{ order.total_amount }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif order.status == 'confirmed' %}bg-blue-100 text-blue-800
+                                    {% elif order.status == 'out_for_delivery' %}bg-purple-100 text-purple-800
+                                    {% elif order.status == 'delivered' %}bg-green-100 text-green-800
+                                    {% elif order.status == 'cancelled' %}bg-red-100 text-red-800{% endif %}">
+                                    {{ order.status|title }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex space-x-2">
+                                    {% if order.status == 'pending' %}
+                                    <form action="{{ url_for('cancel_order', order_id=order._id) }}" method="POST" class="inline">
+                                        <button type="submit" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <a href="{{ url_for('order_tracking', order_id=order._id) }}" 
+                                       class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">
+                                        View Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Order Modal -->
+<div id="orderModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-xl font-semibold mb-4">Place Order</h3>
+            <form id="orderForm" action="{{ url_for('place_order') }}" method="POST" class="space-y-4" onsubmit="return validateOrderForm()">
+                <input type="hidden" id="station_id" name="station_id">
+                <input type="hidden" id="fuel_type" name="fuel_type">
+                
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-600">Station:</p>
+                            <p id="selectedStation" class="font-semibold"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Fuel Type:</p>
+                            <p id="selectedFuelType" class="font-semibold"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Price per liter:</p>
+                            <p class="font-semibold">₹<span id="pricePerLiter"></span></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Available Quantity:</p>
+                            <p class="font-semibold"><span id="availableQuantity"></span>L</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 mb-2" for="quantity">Order Quantity (Liters)</label>
+                    <input type="number" id="quantity" name="quantity" required min="1"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+                        oninput="updateTotalAmount()">
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-gray-700">Total Amount:</p>
+                    <p class="text-2xl font-bold text-blue-600">₹<span id="totalAmount">0.00</span></p>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeOrderModal()"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Confirm Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentFuelType = '{{ fuel_type }}'; // Initialize with the selected fuel type
+let currentStationId = '';
+let currentPrice = 0;
+let currentAvailableQuantity = 0;
+
+function updateSelectedFuelType(value) {
+    currentFuelType = value;
+}
+
+function handlePlaceOrder(button) {
+    const stationId = button.getAttribute('data-station-id');
+    const stationName = button.getAttribute('data-station-name');
+    const petrolPrice = parseFloat(button.getAttribute('data-petrol-price'));
+    const dieselPrice = parseFloat(button.getAttribute('data-diesel-price'));
+    const petrolQuantity = parseFloat(button.getAttribute('data-petrol-quantity'));
+    const dieselQuantity = parseFloat(button.getAttribute('data-diesel-quantity'));
+
+    // Use the current fuel type from the search form
+    const fuelType = document.getElementById('search_fuel_type').value;
+    const price = fuelType === 'petrol' ? petrolPrice : dieselPrice;
+    const availableQty = fuelType === 'petrol' ? petrolQuantity : dieselQuantity;
+
+    openOrderModal(stationId, fuelType, stationName, price, availableQty);
+}
+
+function openOrderModal(stationId, fuelType, stationName, price, availableQty) {
+    console.log('Opening modal with:', { stationId, fuelType, stationName, price, availableQty });
+    
+    if (!fuelType || fuelType.trim() === '') {
+        alert('Please select a fuel type first');
+        return;
+    }
+    
+    currentStationId = stationId;
+    currentFuelType = fuelType;
+    currentPrice = price;
+    currentAvailableQuantity = availableQty;
+    
+    // Set form values
+    document.getElementById('station_id').value = stationId;
+    document.getElementById('fuel_type').value = fuelType;
+    document.getElementById('selectedStation').textContent = stationName;
+    document.getElementById('selectedFuelType').textContent = fuelType.charAt(0).toUpperCase() + fuelType.slice(1);
+    document.getElementById('pricePerLiter').textContent = price;
+    document.getElementById('availableQuantity').textContent = availableQty;
+    
+    // Set max quantity
+    document.getElementById('quantity').max = availableQty;
+    
+    // Show the modal
+    document.getElementById('orderModal').classList.remove('hidden');
+}
+
+function updateTotalAmount() {
+    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+    const total = (quantity * currentPrice).toFixed(2);
+    document.getElementById('totalAmount').textContent = total;
+}
+
+function validateOrderForm() {
+    const form = document.getElementById('orderForm');
+    const quantity = parseFloat(form.quantity.value);
+    
+    if (!currentFuelType || !currentStationId) {
+        alert('Please select a fuel type and station');
+        return false;
+    }
+    
+    if (isNaN(quantity) || quantity <= 0) {
+        alert('Please enter a valid quantity');
+        return false;
+    }
+    
+    if (quantity > currentAvailableQuantity) {
+        alert(`Only ${currentAvailableQuantity}L available. Please enter a smaller quantity.`);
+        return false;
+    }
+    
+    console.log('Submitting order with:', {
+        stationId: currentStationId,
+        fuelType: currentFuelType,
+        quantity: quantity,
+        totalAmount: parseFloat(document.getElementById('totalAmount').textContent)
+    });
+    
+    return true;
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModal').classList.add('hidden');
+    // Clear form values
+    document.getElementById('orderForm').reset();
+    document.getElementById('totalAmount').textContent = '0.00';
+    currentFuelType = '';
+    currentStationId = '';
+    currentPrice = 0;
+    currentAvailableQuantity = 0;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('orderModal');
+    if (event.target == modal) {
+        closeOrderModal();
+    }
+}
+</script>
+{% endblock %} 
